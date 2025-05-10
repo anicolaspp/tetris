@@ -4,6 +4,29 @@ import (
 	"math/rand"
 )
 
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorPurple = "\033[35m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+)
+
+type Color string
+
+var pieceColors = []Color{
+	ColorCyan,
+	ColorYellow,
+	ColorGreen,
+	ColorRed,
+	ColorBlue,
+	ColorPurple,
+	ColorWhite,
+}
+
 var (
 	pieces = map[int]Piece{
 		0: {
@@ -13,47 +36,55 @@ var (
 			// |
 			// |
 			points: []*Point{{x: 0, y: 0}, {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}},
+			color:  pieceColors[0],
 		},
 		1: {
 			id: 1,
 			// ----
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 0, y: 2}, {x: 0, y: 3}},
+			color:  pieceColors[1],
 		},
 		2: {
 			id: 2,
 			// --
 			// --
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 0}, {x: 1, y: 1}},
+			color:  pieceColors[2],
 		},
 		3: {
 			id: 3,
 			//  --
 			// --
 			points: []*Point{{x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: 0, y: 2}},
+			color:  pieceColors[3],
 		},
 		4: {
 			id: 4,
 			//  -
 			// ---
 			points: []*Point{{x: 1, y: 0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 1}},
+			color:  pieceColors[4],
 		},
 		5: {
 			id: 5,
 			// -
 			// ---
 			points: []*Point{{x: 1, y: 0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 0}},
+			color:  pieceColors[5],
 		},
 		6: {
 			id: 6,
 			//   -
 			// ---
 			points: []*Point{{x: 1, y: 0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 2}},
+			color:  pieceColors[6],
 		},
 		7: {
 			id: 7,
 			// --
 			//  --
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 2}},
+			color:  pieceColors[5],
 		},
 		8: {
 			id: 8,
@@ -61,6 +92,7 @@ var (
 			// | |
 			//   |
 			points: []*Point{{x: 0, y: 0}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}},
+			color:  pieceColors[1],
 		},
 		9: {
 			id: 9,
@@ -68,12 +100,14 @@ var (
 			// | |
 			// |
 			points: []*Point{{x: 0, y: 0}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 0}},
+			color:  pieceColors[2],
 		},
 		10: {
 			id: 10,
 			// ---
 			//  -
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 0, y: 2}, {x: 1, y: 1}},
+			color:  pieceColors[3],
 		},
 		11: {
 			id: 11,
@@ -81,6 +115,7 @@ var (
 			// ||
 			//  |
 			points: []*Point{{x: 0, y: 1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}},
+			color:  pieceColors[4],
 		},
 		12: {
 			id: 12,
@@ -88,12 +123,14 @@ var (
 			// |
 			// |
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 0}, {x: 2, y: 0}},
+			color:  pieceColors[0],
 		},
 		13: {
 			id: 13,
 			// ---
 			//   _
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 0, y: 2}, {x: 1, y: 2}},
+			color:  pieceColors[6],
 		},
 		14: {
 			id: 14,
@@ -101,6 +138,7 @@ var (
 			//  |
 			// ||
 			points: []*Point{{x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 0}, {x: 2, y: 1}},
+			color:  pieceColors[1],
 		},
 		15: {
 			id: 15,
@@ -108,12 +146,14 @@ var (
 			// |
 			// ||
 			points: []*Point{{x: 0, y: 0}, {x: 1, y: 0}, {x: 2, y: 0}, {x: 2, y: 1}},
+			color:  pieceColors[2],
 		},
 		16: {
 			id: 16,
 			// ---
 			// -
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 0, y: 2}, {x: 1, y: 0}},
+			color:  pieceColors[3],
 		},
 
 		17: {
@@ -122,6 +162,7 @@ var (
 			//  |
 			//  |
 			points: []*Point{{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}},
+			color:  pieceColors[4],
 		},
 		18: {
 			id: 18,
@@ -129,6 +170,7 @@ var (
 			// ||
 			// |
 			points: []*Point{{x: 0, y: 1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 0}},
+			color:  pieceColors[0],
 		},
 	}
 
@@ -172,6 +214,7 @@ type Piece struct {
 	id     int
 	points []*Point
 	moves  int
+	color  Color
 }
 
 func (p *Piece) Moves() int {
@@ -254,6 +297,10 @@ func (p *Piece) canMoveLeft(b Board) bool {
 	return true
 }
 
+func (p *Piece) Color() string {
+	return string(p.color)
+}
+
 // moveDown moves the piece down.
 func (p *Piece) moveDown() {
 	p.moves++
@@ -287,7 +334,10 @@ func (p *Piece) IsIn(point Point) bool {
 }
 
 func (p *Piece) cp() *Piece {
-	cp := &Piece{id: p.id}
+	cp := &Piece{
+		id:    p.id,
+		color: p.color,
+	}
 	for _, pp := range p.points {
 		cp.points = append(cp.points, &Point{x: pp.x, y: pp.y})
 	}

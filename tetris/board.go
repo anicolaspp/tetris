@@ -6,24 +6,29 @@ package tetris
 // The current moving piece is overlay on top of the Board until it is emprinted
 // on the Board.
 type Board struct {
-	m    [][]int
-	w, h int
+	m           [][]int
+	w, h        int
+	pieceColors [][]string
 }
 
 // initBoard creates an empty board.
 func NewBoard(w, h int) *Board {
 	b := &Board{
-		m: make([][]int, 0),
-		w: w,
-		h: h,
+		m:           make([][]int, 0),
+		w:           w,
+		h:           h,
+		pieceColors: make([][]string, 0),
 	}
 
 	for range h {
 		var row []int
+		var rowColors []string
 		for range w {
 			row = append(row, 0)
+			rowColors = append(rowColors, "")
 		}
 		b.m = append(b.m, row)
+		b.pieceColors = append(b.pieceColors, rowColors)
 	}
 
 	return b
@@ -41,10 +46,15 @@ func (b *Board) Emprint(piece Piece) (int, bool) {
 
 	for _, p := range piece.points {
 		b.m[p.x][p.y] = 1
+		b.pieceColors[p.x][p.y] = piece.Color()
 	}
 
 	rmCnt := b.removeFillRows()
 	return rmCnt, true
+}
+
+func (b *Board) PieceColors() [][]string {
+	return b.pieceColors
 }
 
 func (b *Board) removeFillRows() int {
