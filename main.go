@@ -7,6 +7,9 @@ import (
 
 	"com.github.anicolaspp/tetris/tetris"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/faiface/beep"
+    "github.com/faiface/beep/mp3"
+    "github.com/faiface/beep/speaker"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -31,6 +34,8 @@ var (
 )
 
 func main() {
+	go playMusic()
+
 	fmt.Println("Hello Tetris")
 
 	p := tea.NewProgram(initialModel())
@@ -218,4 +223,17 @@ func (m model) moveDown() tea.Cmd {
 	speed = tetris.Speed(level)
 
 	return nil
+}
+
+func playMusic(){
+	f,err :=os.Open("assets/bgm.mp3")
+	if err != nil {
+		fmt.Println(err)
+	}
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		fmt.Println(err)
+	}
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	speaker.Play(beep.Loop(-1, streamer))
 }
