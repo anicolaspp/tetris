@@ -225,8 +225,8 @@ func (m model) moveDown() tea.Cmd {
 	return nil
 }
 
-func playMusic(){
-	f,err :=os.Open("assets/bgm.mp3")
+func playMusic() error {
+	f, err := os.Open("assets/bgm.mp3")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -236,4 +236,6 @@ func playMusic(){
 	}
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	speaker.Play(beep.Loop(-1, streamer))
+
+	return err
 }
