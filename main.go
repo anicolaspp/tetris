@@ -31,6 +31,8 @@ var (
 	speed = tetris.Speed(1)
 
 	paused = false
+
+	ctrl *beep.Ctrl
 )
 
 func main() {
@@ -140,6 +142,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "p":
 			// Pause the game.
 			paused = !paused
+			
+			if ctrl != nil {
+				speaker.Lock()
+				ctrl.Paused = paused
+				speaker.Unlock()
+			}
+
 			if !paused {
 				return m, m.ticker.run()
 			}
@@ -147,6 +156,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			// Reset the game.
 			paused = false
+
+			if ctrl != nil {
+				speaker.Lock()
+				ctrl.Paused = paused
+				speaker.Unlock()
+			}
+
 			m.board = tetris.NewBoard(w, h)
 			currentPiece = tetris.PickPiece(w)
 			score = 0
@@ -227,15 +243,13 @@ func (m model) moveDown() tea.Cmd {
 
 func playMusic() error {
 	f, err := os.Open("assets/bgm.mp3")
-	if err != nil {
-		fmt.Println(err)
-	}
 	streamer, format, err := mp3.Decode(f)
 	if err != nil {
 		fmt.Println(err)
 	}
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	speaker.Play(beep.Loop(-1, streamer))
+	ctrl = &beep.Ctrl{Streamer: beep.Loop(-1,streamer),Paused: false}
+	speaker.Play(ctrl)
 
 	return err
 }
