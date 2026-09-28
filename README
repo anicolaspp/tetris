@@ -4,6 +4,28 @@ Clone the repo and execute it with Go.
 
 go run main.go
 
+## Run in a container
+
+Build the image:
+
+```sh
+docker build -t terminal-tetris .
+```
+
+Run with an interactive terminal:
+
+```sh
+docker run --rm -it terminal-tetris
+```
+
+On Linux, pass through the host sound device to enable music:
+
+```sh
+docker run --rm -it --device /dev/snd:/dev/snd terminal-tetris
+```
+
+Without an available sound device, the game runs without music.
+
 ```
 Hello Tetris
 
