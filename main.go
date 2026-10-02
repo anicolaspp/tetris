@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"com.github.anicolaspp/tetris/tetris"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/faiface/beep"
-    "github.com/faiface/beep/mp3"
-    "github.com/faiface/beep/speaker"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/ssh"
+	"github.com/charmbracelet/wish"
+	wishlog "github.com/charmbracelet/wish/logging"
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
 )
 
 const (
@@ -36,6 +38,28 @@ var (
 )
 
 func main() {
+	_, err := wish.NewServer(
+		wish.WithAddress("localhost:8080"),
+		wish.WithHostKeyPath("./host_key"),
+		wish.WithMiddleware(
+			wishlog.Middleware(),
+			func(next ssh.Handler) ssh.Handler {
+				return func(s ssh.Session) {
+					defer func() {
+						if r := recover(); r != nil {
+							fmt.Println("Recovered from panic:", r)
+						}
+					}()
+					next(s)
+				}
+			},
+		),
+	)
+	if err != nil {
+		fmt.Errorf("failed to create server: %s", err)
+		return
+	}
+
 	go playMusic()
 
 	fmt.Println("Hello Tetris")
@@ -142,7 +166,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "p":
 			// Pause the game.
 			paused = !paused
-			
+
 			if ctrl != nil {
 				speaker.Lock()
 				ctrl.Paused = paused
@@ -248,7 +272,7 @@ func playMusic() error {
 		fmt.Println(err)
 	}
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	ctrl = &beep.Ctrl{Streamer: beep.Loop(-1,streamer),Paused: false}
+	ctrl = &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: false}
 	speaker.Play(ctrl)
 
 	return err
