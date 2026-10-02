@@ -1,18 +1,26 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"charm.land/log/v2"
+	"charm.land/ssh"
+	"charm.land/wish/v2"
+	"charm.land/wish/v2/bubbletea"
+	"charm.land/wish/v2/logging"
 	"com.github.anicolaspp/tetris/tetris"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
-	wishlog "github.com/charmbracelet/wish/logging"
 	"github.com/faiface/beep"
-	"github.com/faiface/beep/mp3"
+
+	// "github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 )
 
@@ -23,6 +31,11 @@ const (
 	blockChar = "0"
 
 	menu = "\np - pause, q - quit, space - drop, r - reset\n"
+)
+
+const (
+	host = "localhost"
+	port = "23234"
 )
 
 var (
@@ -38,37 +51,57 @@ var (
 )
 
 func main() {
-	_, err := wish.NewServer(
-		wish.WithAddress("localhost:8080"),
-		wish.WithHostKeyPath("./host_key"),
-		wish.WithMiddleware(
-			wishlog.Middleware(),
-			func(next ssh.Handler) ssh.Handler {
-				return func(s ssh.Session) {
-					defer func() {
-						if r := recover(); r != nil {
-							fmt.Println("Recovered from panic:", r)
-						}
-					}()
-					next(s)
-				}
-			},
-		),
+	s, err := wish.NewServer(
+		ssh.AllocatePty(),
+		wish.WithAddress(net.JoinHostPort(host, port)),
+		wish.WithHostKeyPath(".ssh/id_ed25519"),
+		wish.WithMiddleware(middleWare(), logging.Middleware()),
 	)
 	if err != nil {
-		fmt.Errorf("failed to create server: %s", err)
-		return
+		log.Error("Could not start server", "error", err)
 	}
 
-	go playMusic()
+	// // go playMusic()
 
-	fmt.Println("Hello Tetris")
+	// fmt.Println("Hello Tetris")
 
-	p := tea.NewProgram(initialModel(), tea.WithInput(os.Stdin), tea.WithOutput(os.Stdout))
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
+	// p := tea.NewProgram(initialModel(), tea.WithInput(os.Stdin), tea.WithOutput(os.Stdout))
+	// if _, err := p.Run(); err != nil {
+	// 	fmt.Printf("Alas, there's been an error: %v", err)
+	// 	os.Exit(1)
+	// }
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	log.Info("Starting SSH server", "host", host, "port", port)
+	go func() {
+		if err = s.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			log.Error("Could not start server", "error", err)
+			done <- nil
+		}
+	}()
+
+	<-done
+	log.Info("Stopping SSH server")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer func() { cancel() }()
+	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		log.Error("Could not stop server", "error", err)
 	}
+}
+
+func middleWare() wish.Middleware {
+	teaHandler := func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+		_, _, active := s.Pty()
+		if !active {
+			wish.Fatalln(s, "no active terminal, skipping")
+			return nil, nil
+		}
+
+		return initialModel(), bubbletea.MakeOptions(s)
+	}
+
+	return bubbletea.Middleware(teaHandler)
 }
 
 // timeTick is a message sent every 1 second.
@@ -100,7 +133,7 @@ func (m model) Init() tea.Cmd {
 
 // View generates a string representing the current state of the board with the
 // current piece overlay on top.
-func (m model) View() string {
+func (m model) View() tea.View {
 
 	// menuStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("green"))
 
@@ -141,7 +174,7 @@ func (m model) View() string {
 	}
 
 	board += bottom
-	return board
+	return tea.NewView(board)
 }
 
 // Update updates the model as a response to a IO change.
@@ -265,15 +298,15 @@ func (m model) moveDown() tea.Cmd {
 	return nil
 }
 
-func playMusic() error {
-	f, err := os.Open("assets/bgm.mp3")
-	streamer, format, err := mp3.Decode(f)
-	if err != nil {
-		fmt.Println(err)
-	}
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	ctrl = &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: false}
-	speaker.Play(ctrl)
+// func playMusic() error {
+// 	f, err := os.Open("assets/bgm.mp3")
+// 	streamer, format, err := mp3.Decode(f)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+// 	ctrl = &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: false}
+// 	speaker.Play(ctrl)
 
-	return err
-}
+// 	return err
+// }
