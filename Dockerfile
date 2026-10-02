@@ -1,4 +1,4 @@
-FROM golang:1.23.5-bookworm AS build
+FROM golang:1.26.8-bookworm AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2-dev \
@@ -20,5 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY --from=build /out/tetris /usr/local/bin/tetris
 COPY assets ./assets
+
+EXPOSE 23234/tcp
 
 ENTRYPOINT ["tetris"]
